@@ -1,0 +1,11 @@
+{
+  "session_id": "ses_01J8Z2K6QF",
+  "hook_event_name": "PreToolUse",
+  "cwd": "C:/work/demo-repo",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "git reset --hard HEAD~3",
+    "description": "清理工作区后重来"
+  },
+  "tool_use_id": "toolu_01VB9QX7"
+}

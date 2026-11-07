@@ -1,0 +1,15 @@
+{
+  "session_id": "ses_01J8Z2K6QF",
+  "hook_event_name": "PostToolUse",
+  "cwd": "C:/work/demo-repo",
+  "tool_name": "Write",
+  "tool_input": {
+    "file_path": "C:/work/demo-repo/src/visit_plan/importer.py",
+    "content": "def import_plans(path):\n    ...\n"
+  },
+  "tool_response": {
+    "success": true,
+    "bytes": 4213
+  },
+  "tool_use_id": "toolu_01VB9QXA"
+}

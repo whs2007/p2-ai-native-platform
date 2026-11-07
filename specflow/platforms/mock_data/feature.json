@@ -1,0 +1,57 @@
+{
+  "features": [
+    {
+      "feature_id": "FEAT-1024",
+      "name": "visit-import",
+      "title": "拜访计划导入",
+      "owner": "lin.xu",
+      "branch": "feature/visit-import",
+      "base_branch": "main",
+      "status": "active",
+      "repo": "demo-repo",
+      "created_at": "2026-10-29T09:30:00+08:00",
+      "contract": {
+        "feature_id": "FEAT-1024",
+        "title": "拜访计划导入",
+        "branch": "feature/visit-import",
+        "base_branch": "main",
+        "owner": "lin.xu",
+        "required_checks": [
+          "python -m pytest -q",
+          "ruff check src tests"
+        ],
+        "reviewers": [
+          "chen.yu"
+        ],
+        "merge_policy": "squash",
+        "notes": "T1 只改 src/visit_plan/importer.py 与 tests/test_importer.py"
+      }
+    },
+    {
+      "feature_id": "FEAT-1025",
+      "name": "visit-report",
+      "title": "拜访日报导出",
+      "owner": "chen.yu",
+      "branch": "feature/visit-report",
+      "base_branch": "main",
+      "status": "active",
+      "repo": "demo-repo",
+      "created_at": "2026-10-25T14:10:00+08:00",
+      "contract": {
+        "feature_id": "FEAT-1025",
+        "title": "拜访日报导出",
+        "branch": "feature/visit-report",
+        "base_branch": "main",
+        "owner": "chen.yu",
+        "required_checks": [
+          "python -m pytest -q"
+        ],
+        "reviewers": [
+          "lin.xu"
+        ],
+        "merge_policy": "squash",
+        "notes": "背景 feature，本期不实现"
+      }
+    }
+  ]
+}

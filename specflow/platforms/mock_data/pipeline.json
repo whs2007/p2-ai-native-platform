@@ -1,0 +1,38 @@
+{
+  "default_run_id": "RUN-2031",
+  "failed_run_id": "RUN-2032",
+  "runs": {
+    "RUN-2031": {
+      "run_id": "RUN-2031",
+      "branch": "feature/visit-import",
+      "commit": "a1b2c3d",
+      "status": "passed",
+      "duration_s": 42,
+      "url": "https://ci.example.com/runs/RUN-2031",
+      "triggered_by": "lin.xu",
+      "finished_at": "2026-10-29T17:42:10+08:00",
+      "stages": [
+        {"name": "lint", "status": "passed", "duration_s": 8},
+        {"name": "unit-test", "status": "passed", "duration_s": 26},
+        {"name": "package", "status": "passed", "duration_s": 8}
+      ]
+    },
+    "RUN-2032": {
+      "run_id": "RUN-2032",
+      "branch": "feature/visit-import",
+      "commit": "b7e8f90",
+      "status": "failed",
+      "duration_s": 58,
+      "url": "https://ci.example.com/runs/RUN-2032",
+      "triggered_by": "lin.xu",
+      "finished_at": "2026-10-29T18:05:33+08:00",
+      "failed_stage": "unit-test",
+      "failure_summary": "tests/test_importer.py::test_import_plans_skips_duplicate_store_code 断言失败：期望 4 条，实际 5 条",
+      "stages": [
+        {"name": "lint", "status": "passed", "duration_s": 7},
+        {"name": "unit-test", "status": "failed", "duration_s": 41},
+        {"name": "package", "status": "skipped", "duration_s": 0}
+      ]
+    }
+  }
+}

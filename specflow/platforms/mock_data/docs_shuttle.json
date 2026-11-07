@@ -1,0 +1,39 @@
+{
+  "documents": [
+    {
+      "doc_id": "DOC-2041",
+      "title": "拜访计划导入 PRD（visit-import）",
+      "status": "reviewed",
+      "url": "https://docs.example.com/DOC-2041",
+      "space": "retail-tools",
+      "author": "lin.xu",
+      "updated_at": "2026-10-28T15:20:00+08:00",
+      "claimed_by": null,
+      "text": "# 拜访计划导入（visit-import）\n\n## 背景\nBD 每日从 POI 导出 CSV 门店清单后，手工录入门店编码、门店名称、计划日期与归属人，容易出现同店重复计划。目标：一次导入生成去重后的拜访计划。\n\n## 需求\n- REQ-01 读取 UTF-8 CSV（表头 store_code,store_name,plan_date,owner），返回 Plan 列表。\n- REQ-02 按 store_code 去重，保留首次出现的记录。\n- REQ-03 跳过空行；表头缺失时抛出 ValueError；plan_date 使用 datetime.date.fromisoformat 解析。\n\n## 验收标准\n- AC-01 5 行合法数据（含 1 条重复编码、1 条空行）导入后返回 4 条计划。\n- AC-02 重复编码保留首次出现的 store_name 与 owner。\n- AC-03 缺表头 CSV 抛 ValueError，错误信息包含 store_code。\n\n## 范围外\n- 不处理 xlsx、不调用 POI 实时接口、不写数据库、不提供 UI。",
+      "images": [
+        {
+          "name": "visit-import-template.png",
+          "caption": "CSV 模板截图",
+          "text": "store_code,store_name,plan_date,owner\nST-001,望京门店,2026-11-02,lin.xu\nST-002,中关村门店,2026-11-03,chen.yu"
+        },
+        {
+          "name": "visit-import-dedupe.png",
+          "caption": "去重与报错规则截图",
+          "text": "同一 store_code 只保留首次出现的计划，重复行不覆盖已有记录。\n缺表头时直接报错，不按列位置猜测。"
+        }
+      ]
+    },
+    {
+      "doc_id": "DOC-2042",
+      "title": "门店主数据（POI）接口说明",
+      "status": "draft",
+      "url": "https://docs.example.com/DOC-2042",
+      "space": "retail-tools",
+      "author": "chen.yu",
+      "updated_at": "2026-10-20T10:05:00+08:00",
+      "claimed_by": null,
+      "text": "# 门店主数据（POI）接口说明\n\n按 store_code 查询门店名称与所属区域，仅供背景参考。\n本期 visit-import 不调用该接口，门店名称以 CSV 为准。",
+      "images": []
+    }
+  ]
+}

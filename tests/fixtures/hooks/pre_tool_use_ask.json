@@ -1,0 +1,11 @@
+{
+  "session_id": "ses_01J8Z2K6QF",
+  "hook_event_name": "PreToolUse",
+  "cwd": "C:/work/demo-repo",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "rm -rf ./build",
+    "description": "删除构建产物目录"
+  },
+  "tool_use_id": "toolu_01VB9QX9"
+}

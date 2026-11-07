@@ -1,0 +1,11 @@
+{
+  "session_id": "ses_01J8Z2K6QF",
+  "hook_event_name": "PreToolUse",
+  "cwd": "C:/work/demo-repo",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "pytest -q",
+    "description": "跑单测"
+  },
+  "tool_use_id": "toolu_01VB9QX8"
+}

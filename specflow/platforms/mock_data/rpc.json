@@ -1,0 +1,28 @@
+{
+  "methods": {
+    "visit.import.validate": {
+      "result": {
+        "valid": true,
+        "cases": 5,
+        "checks": [
+          "header_required",
+          "skip_blank_rows",
+          "dedupe_by_store_code",
+          "date_iso8601",
+          "empty_file"
+        ]
+      }
+    },
+    "visit.import.notify": {
+      "result": {
+        "delivered": true,
+        "channel": "docs-shuttle",
+        "receivers": ["lin.xu"]
+      }
+    }
+  },
+  "error": {
+    "code": "RPC_PLATFORM_ERROR",
+    "message": "staging 平台 RPC 调用失败：visit.import.validate 返回 503（mock fixture rpc-error）"
+  }
+}

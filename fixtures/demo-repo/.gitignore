@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# 环境与本地配置
+.env
+.env.*
+!.env.example
+
+# 编辑器
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

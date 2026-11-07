@@ -1,0 +1,830 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>specflow · 流水线控制台</title>
+<style>
+  :root {
+    --bg: #0b1020;
+    --panel: #121a2e;
+    --panel-2: #0f1626;
+    --line: #24304a;
+    --text: #e6ebf7;
+    --muted: #8b97b3;
+    --accent: #6c8cff;
+    --accent-2: #8f6cff;
+    --green: #35d39a;
+    --amber: #f6c453;
+    --red: #ff6b81;
+    --cyan: #55d4e6;
+    --mono: ui-monospace, SFMono-Regular, "Cascadia Code", Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: radial-gradient(1200px 700px at 80% -10%, #1a2450 0%, var(--bg) 45%) fixed;
+    color: var(--text); font: 14px/1.55 "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  .topbar {
+    position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 14px;
+    padding: 12px 22px; background: rgba(11,16,32,.82); backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: .4px; }
+  .logo-mark {
+    width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; font-size: 15px;
+    box-shadow: 0 6px 20px rgba(108,140,255,.35);
+  }
+  .logo small { display: block; color: var(--muted); font-weight: 400; font-size: 11px; letter-spacing: .2px; }
+  .topbar .spacer { flex: 1; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--muted); font-size: 12px; white-space: nowrap;
+  }
+  .chip b { color: var(--text); font-weight: 600; }
+  .chip.ok { border-color: rgba(53,211,154,.35); color: var(--green); }
+  .chip.warn { border-color: rgba(246,196,83,.35); color: var(--amber); }
+  .chip.err { border-color: rgba(255,107,129,.4); color: var(--red); }
+  .btn {
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    padding: 7px 13px; border-radius: 8px; transition: .15s;
+  }
+  .btn:hover { border-color: var(--accent); transform: translateY(-1px); }
+  .btn.primary { background: linear-gradient(135deg, var(--accent), var(--accent-2)); border: 0; color: #fff; }
+  .btn.ghost { background: transparent; }
+  .btn.small { padding: 4px 9px; font-size: 12px; border-radius: 7px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+  .layout { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 18px; padding: 18px 22px 40px; max-width: 1500px; margin: 0 auto; }
+  .rail { position: sticky; top: 78px; align-self: start; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+  .rail-head { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+  .rail ol { list-style: none; margin: 0; padding: 8px; display: flex; flex-direction: column; gap: 4px; }
+  .stage {
+    display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px;
+    padding: 9px 9px; border-radius: 9px; border: 1px solid transparent; cursor: pointer;
+  }
+  .stage:hover { background: rgba(108,140,255,.08); }
+  .stage.current { background: rgba(108,140,255,.13); border-color: rgba(108,140,255,.45); }
+  .stage .dot { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-size: 10px; border: 1px solid var(--line); color: var(--muted); }
+  .stage.done .dot { background: rgba(53,211,154,.15); border-color: rgba(53,211,154,.5); color: var(--green); }
+  .stage.current .dot { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .stage .sid { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .stage .stitle { font-size: 12.5px; line-height: 1.3; }
+  .stage .gate { font-size: 10px; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .gate.pending { color: var(--amber); border-color: rgba(246,196,83,.45); }
+  .gate.approved { color: var(--green); border-color: rgba(53,211,154,.45); }
+  .rail-foot { padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11.5px; }
+  main { min-width: 0; }
+  .hero { background: linear-gradient(135deg, rgba(108,140,255,.15), rgba(143,108,255,.06)); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
+  .hero h1 { margin: 0 0 4px; font-size: 21px; letter-spacing: .2px; }
+  .hero p { margin: 0; color: var(--muted); font-size: 13px; }
+  .metrics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 12px; margin-top: 16px; }
+  .metric { background: var(--panel-2); border: 1px solid var(--line); border-radius: 12px; padding: 11px 13px; }
+  .metric .k { color: var(--muted); font-size: 11.5px; }
+  .metric .v { font-size: 21px; font-weight: 700; margin-top: 2px; }
+  .metric .v small { font-size: 12px; color: var(--muted); font-weight: 400; }
+  .tabs { display: flex; gap: 4px; margin: 16px 0 12px; border-bottom: 1px solid var(--line); }
+  .tab { padding: 9px 15px; border: 0; background: none; color: var(--muted); border-bottom: 2px solid transparent; }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+  .panel h2 { margin: 0 0 12px; font-size: 14px; color: var(--muted); font-weight: 600; letter-spacing: .3px; }
+  .grid2 { display: grid; grid-template-columns: 1.25fr .75fr; gap: 14px; }
+  .kicker { color: var(--muted); font-size: 12px; }
+  .next-box { display: flex; flex-direction: column; gap: 10px; }
+  .cmdline { display: flex; gap: 8px; }
+  .cmdline input {
+    flex: 1; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 12px;
+    font-family: var(--mono); font-size: 12.5px;
+  }
+  .cmdline input:focus { outline: none; border-color: var(--accent); }
+  .problems { margin: 0; padding-left: 18px; color: var(--amber); font-size: 12.5px; }
+  .problems li { margin: 3px 0; }
+  .okline { color: var(--green); font-size: 12.5px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 11.5px; }
+  td { padding: 9px 10px; border-bottom: 1px solid rgba(36,48,74,.55); vertical-align: top; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: rgba(108,140,255,.07); }
+  .mono { font-family: var(--mono); font-size: 12px; }
+  .muted { color: var(--muted); }
+  .badge { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 11px; border: 1px solid var(--line); }
+  .badge.approved { color: var(--green); border-color: rgba(53,211,154,.45); background: rgba(53,211,154,.08); }
+  .badge.draft { color: var(--cyan); border-color: rgba(85,212,230,.4); background: rgba(85,212,230,.06); }
+  .badge.superseded, .badge.rejected { color: var(--red); border-color: rgba(255,107,129,.4); background: rgba(255,107,129,.06); }
+  .badge.pending { color: var(--amber); border-color: rgba(246,196,83,.45); background: rgba(246,196,83,.07); }
+  .gates-list { display: flex; flex-direction: column; gap: 8px; }
+  .gate-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; }
+  .gate-row .gname { font-family: var(--mono); font-size: 12px; }
+  .gate-row .spacer { flex: 1; }
+  .trace-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr)); gap: 8px; margin-bottom: 12px; }
+  .trace-item { text-align: left; background: var(--panel-2); border: 1px solid var(--line); border-radius: 9px; padding: 9px 11px; }
+  .trace-item:hover { border-color: var(--accent); }
+  .trace-item b { display: block; font-family: var(--mono); font-size: 11.5px; font-weight: 600; }
+  .trace-item span { color: var(--muted); font-size: 11px; }
+  pre.console {
+    margin: 0; height: 420px; overflow: auto; background: #070b16; border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; word-break: break-word;
+  }
+  pre.json { margin: 0; max-height: 460px; overflow: auto; background: #070b16; border: 1px solid var(--line); border-radius: 10px; padding: 12px; font-family: var(--mono); font-size: 11.5px; white-space: pre-wrap; }
+  .log-line.err { color: var(--red); }
+  .log-line.ok { color: var(--green); }
+  .log-line.meta { color: var(--muted); }
+  .modal { position: fixed; inset: 0; background: rgba(4,7,15,.72); display: flex; align-items: center; justify-content: center; padding: 28px; z-index: 50; }
+  .modal[hidden] { display: none; }
+  .modal-card { width: min(900px, 100%); max-height: 86vh; display: flex; flex-direction: column; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+  .modal-head { display: flex; align-items: center; gap: 10px; padding: 13px 16px; border-bottom: 1px solid var(--line); }
+  .modal-head h3 { margin: 0; font-size: 14px; }
+  .modal-head .spacer { flex: 1; }
+  .modal-body { padding: 18px 22px; overflow: auto; }
+  .toast { position: fixed; right: 22px; bottom: 22px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 10px 14px; font-size: 12.5px; box-shadow: 0 12px 40px rgba(0,0,0,.4); opacity: 0; transform: translateY(8px); transition: .2s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: none; }
+  .toast.err { border-color: rgba(255,107,129,.5); color: var(--red); }
+  .toast.ok { border-color: rgba(53,211,154,.5); color: var(--green); }
+  .md h1, .md h2, .md h3 { color: var(--text); }
+  .md h1 { font-size: 20px; }
+  .md h2 { font-size: 16px; border-bottom: 1px solid var(--line); padding-bottom: 5px; }
+  .md h3 { font-size: 14px; }
+  .md code { background: rgba(108,140,255,.13); padding: 1px 5px; border-radius: 5px; font-family: var(--mono); font-size: 12px; }
+  .md pre { background: #070b16; border: 1px solid var(--line); border-radius: 9px; padding: 12px; overflow: auto; }
+  .md pre code { background: none; padding: 0; }
+  .md table { margin: 8px 0; }
+  .md th, .md td { border: 1px solid var(--line); padding: 6px 9px; }
+  .md blockquote { margin: 8px 0; padding: 4px 12px; border-left: 3px solid var(--accent); color: var(--muted); }
+  .md a { color: var(--accent); }
+  .empty { color: var(--muted); font-size: 13px; padding: 14px 0; }
+  .mode-switch { display: flex; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 2px; }
+  .mode-btn { border: 0; background: none; color: var(--muted); padding: 5px 12px; border-radius: 7px; font-size: 12px; }
+  .mode-btn:hover { color: var(--text); }
+  .mode-btn.active { background: rgba(108,140,255,.22); color: var(--text); }
+  #terminal-view { max-width: 1500px; margin: 0 auto; padding: 18px 22px 40px; }
+  .term-panel { background: #070b16; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+  .term-head { display: flex; align-items: center; gap: 7px; padding: 10px 14px; border-bottom: 1px solid var(--line); background: var(--panel); color: var(--muted); font-size: 12px; }
+  .term-head .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+  .term-body { padding: 14px 16px; height: calc(100vh - 280px); min-height: 360px; overflow: auto; font-family: var(--mono); font-size: 12.5px; }
+  .term-line { white-space: pre-wrap; word-break: break-word; line-height: 1.5; }
+  .term-line.cmd { color: #9fb4ff; }
+  .term-line.err { color: var(--red); }
+  .term-line.ok { color: var(--green); }
+  .term-line.muted { color: var(--muted); }
+  .term-input { display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--line); padding: 10px 14px; background: var(--panel-2); }
+  .term-input .prompt { color: var(--green); font-family: var(--mono); font-size: 12.5px; }
+  .term-input input { flex: 1; background: transparent; border: 0; outline: none; font-family: var(--mono); font-size: 13px; color: var(--text); }
+  .term-hints { padding: 10px 14px 12px; color: var(--muted); font-size: 11.5px; display: flex; gap: 7px; flex-wrap: wrap; border-top: 1px solid var(--line); }
+  .term-hints button { font-family: var(--mono); font-size: 11px; }
+  @media (max-width: 1000px) {
+    .layout { grid-template-columns: 1fr; padding: 12px; }
+    .rail { position: static; }
+    .grid2 { grid-template-columns: 1fr; }
+    .metrics { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="logo"><div class="logo-mark">sf</div><div>specflow<small>Spec 驱动研发流水线 · 控制台</small></div></div>
+  <div class="mode-switch" role="tablist" aria-label="模式切换">
+    <button id="mode-ui" class="mode-btn active" onclick="setMode('ui')">图形界面</button>
+    <button id="mode-term" class="mode-btn" onclick="setMode('term')">终端</button>
+  </div>
+  <div class="spacer"></div>
+  <span class="chip" id="chip-project" title="">项目：<b>—</b></span>
+  <span class="chip" id="chip-mode">模式 <b>—</b></span>
+  <span class="chip" id="chip-version">v—</span>
+  <button class="btn ghost small" onclick="refresh()">刷新</button>
+  <button class="btn ghost small" onclick="runCheck()">校验</button>
+  <button class="btn ghost small" onclick="openDoctor()">自检</button>
+  <button class="btn primary small" onclick="doInit()">初始化</button>
+</header>
+
+<div class="layout">
+  <aside class="rail">
+    <div class="rail-head"><span>流水线</span><span id="rail-progress">—</span></div>
+    <ol id="stages"></ol>
+    <div class="rail-foot" id="rail-foot">—</div>
+  </aside>
+
+  <main>
+    <section class="hero">
+      <h1 id="hero-title">加载中…</h1>
+      <p id="hero-sub">正在读取 .spec 状态</p>
+      <div class="metrics">
+        <div class="metric"><div class="k">当前阶段</div><div class="v" id="m-stage">—</div></div>
+        <div class="metric"><div class="k">产物</div><div class="v" id="m-artifacts">—</div></div>
+        <div class="metric"><div class="k">已批准</div><div class="v" id="m-approved">—</div></div>
+        <div class="metric"><div class="k">校验问题</div><div class="v" id="m-problems">—</div></div>
+      </div>
+    </section>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="overview" onclick="setTab('overview')">概览</button>
+      <button class="tab" data-tab="artifacts" onclick="setTab('artifacts')">产物</button>
+      <button class="tab" data-tab="traces" onclick="setTab('traces')">Trace</button>
+      <button class="tab" data-tab="agents" onclick="setTab('agents')">Agent</button>
+      <button class="tab" data-tab="run" onclick="setTab('run')">运行</button>
+    </nav>
+
+    <section id="tab-overview">
+      <div class="grid2">
+        <div class="panel">
+          <h2>下一步</h2>
+          <div class="next-box">
+            <div class="kicker" id="next-hint">—</div>
+            <div class="cmdline">
+              <input id="next-cmd" spellcheck="false" placeholder='例如：/plan-task'>
+              <button class="btn primary" id="next-run" onclick="runCommand(document.getElementById('next-cmd').value)">运行</button>
+            </div>
+            <div id="gate-actions"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h2>校验与门控</h2>
+          <div id="problems-box"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <h2>产物速览</h2>
+        <div id="overview-artifacts"></div>
+      </div>
+    </section>
+
+    <section id="tab-artifacts" hidden>
+      <div class="panel">
+        <h2>产物列表 <span class="muted" style="font-weight:400;font-size:11.5px">（点击查看 Markdown）</span></h2>
+        <div id="artifacts-table"></div>
+      </div>
+    </section>
+
+    <section id="tab-traces" hidden>
+      <div class="panel">
+        <h2>Trace 文件</h2>
+        <div class="trace-list" id="trace-list"></div>
+        <div id="trace-view" class="empty">选择左侧 Trace 查看事件</div>
+      </div>
+    </section>
+
+    <section id="tab-agents" hidden>
+      <div class="panel">
+        <h2>TDD Agent Loop
+          <span class="muted" style="font-weight:400;font-size:11.5px">Planner → Test Writer → Executor → Verifier（数据来自 tdd-report.jsonl）</span>
+        </h2>
+        <div class="grid2" id="agent-summary"></div>
+        <div id="agent-events"></div>
+      </div>
+    </section>
+
+    <section id="tab-run" hidden>
+      <div class="panel">
+        <h2>执行阶段命令</h2>
+        <div class="cmdline" style="margin-bottom:10px">
+          <input id="run-cmd" spellcheck="false" placeholder='输入阶段命令，例如：/tech-design'>
+          <button class="btn primary" id="run-btn" onclick="runCommand(document.getElementById('run-cmd').value)">运行</button>
+          <button class="btn ghost" onclick="clearConsole()">清空</button>
+        </div>
+        <div id="quick-commands" class="trace-list" style="margin-bottom:12px"></div>
+        <pre class="console" id="console">等待执行…</pre>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="terminal-view" hidden>
+  <div class="term-panel">
+    <div class="term-head">
+      <span class="dot" style="background:#ff6b81"></span>
+      <span class="dot" style="background:#f6c453"></span>
+      <span class="dot" style="background:#35d39a"></span>
+      <span style="margin-left:8px">specflow · 终端模式</span>
+      <span class="spacer" style="flex:1"></span>
+      <span id="term-cwd" class="muted"></span>
+      <button class="btn ghost small" onclick="clearTerminal()">清空</button>
+    </div>
+    <div class="term-body" id="term-out"></div>
+    <div class="term-input">
+      <span class="prompt">specflow&gt;</span>
+      <input id="term-cmd" spellcheck="false" autocomplete="off" placeholder="status --json">
+      <button class="btn primary small" id="term-run" onclick="termRun()">运行</button>
+    </div>
+    <div class="term-hints">
+      <span>常用：</span>
+      <button class="btn ghost small" onclick="termFill('status --json')">status --json</button>
+      <button class="btn ghost small" onclick="termFill('doctor')">doctor</button>
+      <button class="btn ghost small" onclick="termFill('run &quot;/project-init&quot;')">run "/project-init"</button>
+      <button class="btn ghost small" onclick="termFill('gate approve design')">gate approve design</button>
+      <button class="btn ghost small" onclick="termFill('restore design.md')">restore design.md</button>
+      <button class="btn ghost small" onclick="termFill('unlock design.md --force')">unlock --force</button>
+      <button class="btn ghost small" onclick="termFill('--help')">--help</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal" hidden onclick="if(event.target===this)closeModal()">
+  <div class="modal-card">
+    <div class="modal-head"><h3 id="modal-title">详情</h3><span class="spacer"></span><button class="btn ghost small" onclick="closeModal()">关闭</button></div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const state = { data: null, tab: 'overview', running: false, autoTimer: null, mode: localStorage.getItem('specflow.mode') || 'ui', termHistory: [], termIndex: 0, termWelcome: false };
+
+function el(id) { return document.getElementById(id); }
+function esc(text) {
+  return String(text == null ? '' : text)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function toast(message, kind) {
+  const node = el('toast');
+  node.textContent = message;
+  node.className = 'toast show ' + (kind || '');
+  clearTimeout(node._timer);
+  node._timer = setTimeout(() => { node.className = 'toast ' + (kind || ''); }, 2800);
+}
+async function api(path, options) {
+  const res = await fetch(path, options || {});
+  let data = {};
+  try { data = await res.json(); } catch (err) { data = {}; }
+  if (!res.ok || data.ok === false) throw new Error(data.error || ('HTTP ' + res.status));
+  return data;
+}
+function setMode(mode) {
+  state.mode = mode;
+  localStorage.setItem('specflow.mode', mode);
+  el('mode-ui').classList.toggle('active', mode === 'ui');
+  el('mode-term').classList.toggle('active', mode === 'term');
+  document.querySelector('.layout').hidden = mode !== 'ui';
+  el('terminal-view').hidden = mode !== 'term';
+  if (mode === 'term') setTimeout(() => el('term-cmd').focus(), 60);
+}
+
+/* -------------------------------- 渲染 -------------------------------- */
+function stageMark(row) {
+  if (row.current) return '▶';
+  return row.reached ? '✓' : '·';
+}
+function stageClass(row) {
+  if (row.current) return 'current';
+  return row.reached ? 'done' : 'locked';
+}
+function renderStages() {
+  const data = state.data; if (!data) return;
+  el('stages').innerHTML = (data.stages || []).map((row) => {
+    const gate = row.gate
+      ? `<span class="gate ${esc(row.gate.status)}" title="门控 ${esc(row.gate.name)}">${esc(row.gate.status)}</span>`
+      : '';
+    return `<li class="stage ${stageClass(row)}" onclick="pickStage('${esc(row.command)}')" title="${esc(row.command)}">
+      <span class="dot">${stageMark(row)}</span>
+      <span><span class="sid">${esc(row.stage)}</span><br><span class="stitle">${esc(row.title)}</span></span>
+      ${gate}
+    </li>`;
+  }).join('');
+  const reached = (data.stages || []).filter((row) => row.reached).length;
+  el('rail-progress').textContent = reached + '/' + (data.stages || []).length;
+  const gates = Object.entries(data.gates || {});
+  el('rail-foot').innerHTML = gates.length
+    ? gates.map(([name, gate]) => `<div>门控 <b>${esc(name)}</b>：<span class="${gate.status === 'approved' ? 'okline' : 'muted'}">${esc(gate.status)}</span>${gate.by ? ' · ' + esc(gate.by) : ''}</div>`).join('')
+    : '尚无门控记录';
+}
+function renderHero() {
+  const data = state.data; if (!data) return;
+  const current = (data.stages || []).find((row) => row.current) || (data.stages || [])[0];
+  el('hero-title').textContent = current ? `${current.stage} · ${current.title}` : '流水线状态';
+  el('hero-sub').textContent = data.initialized
+    ? `当前阶段 ${data.stage || '—'} · owner ${data.owner || '—'} · ${data.checked ? '已做 hash 校验' : '未做 hash 校验'}`
+    : '尚未初始化：点击右上角“初始化”生成 .spec / hooks.json / AGENTS.md';
+  const counts = data.counts || {};
+  el('m-stage').textContent = data.stage || '—';
+  el('m-artifacts').innerHTML = (counts.artifacts || 0) + ' <small>个</small>';
+  el('m-approved').innerHTML = (counts.approved || 0) + ' <small>个</small>';
+  el('m-problems').innerHTML = (counts.problems || 0) + ' <small>条</small>';
+  el('m-problems').style.color = (counts.problems || 0) > 0 ? 'var(--amber)' : 'var(--green)';
+}
+function renderOverview() {
+  const data = state.data; if (!data) return;
+  const current = (data.stages || []).find((row) => row.current) || (data.stages || [])[0];
+  const command = current ? current.command : '';
+  if (!el('next-cmd').value) el('next-cmd').value = command;
+  el('next-hint').textContent = current
+    ? `当前建议：${command}（${current.title}）`
+    : '先执行初始化，再运行 /project-init';
+
+  const gates = [];
+  (data.stages || []).forEach((row) => {
+    if (row.gate && row.gate.status !== 'approved') gates.push(row.gate);
+  });
+  el('gate-actions').innerHTML = gates.length
+    ? gates.map((gate) => `<div class="gate-row">
+        <span class="gname">${esc(gate.name)}</span>
+        <span class="badge ${esc(gate.status)}">${esc(gate.status)}</span>
+        <span class="spacer"></span>
+        <button class="btn small" onclick="gateAction('${esc(gate.name)}','approve')">批准</button>
+        <button class="btn small ghost" onclick="gateAction('${esc(gate.name)}','reject')">打回</button>
+        <button class="btn small ghost" onclick="gateAction('${esc(gate.name)}','revise')">要求修订</button>
+      </div>`).join('')
+    : '<div class="okline">没有待处理门控。</div>';
+
+  const problems = data.problems || [];
+  el('problems-box').innerHTML = problems.length
+    ? `<ul class="problems">${problems.slice(0, 12).map((p) => `<li>${esc(p)}</li>`).join('')}</ul>`
+    : `<div class="okline">校验通过：${data.checked ? '产物字段与 hash 一致' : '点击右上角“校验”做 hash 检查'}</div>`;
+
+  const rows = (data.artifacts || []).slice(0, 8);
+  el('overview-artifacts').innerHTML = rows.length ? `
+    <table><thead><tr><th>产物</th><th>阶段</th><th>状态</th><th>版本</th><th>摘要</th></tr></thead><tbody>
+    ${rows.map((item) => `<tr onclick="openArtifact('${esc(item.name)}')">
+      <td class="mono">${esc(item.name)}</td><td>${esc(item.stage)}</td>
+      <td><span class="badge ${esc(item.status)}">${esc(item.status)}</span></td>
+      <td>v${esc(item.version)}</td><td class="muted">${esc(item.summary || '')}</td></tr>`).join('')}
+    </tbody></table>` : '<div class="empty">尚无产物，运行 /project-init 开始。</div>';
+}
+function renderArtifacts() {
+  const data = state.data; if (!data) return;
+  el('artifacts-table').innerHTML = (data.artifacts || []).length ? `
+    <table><thead><tr><th>产物</th><th>阶段</th><th>状态</th><th>版本</th><th>hash</th><th>摘要</th></tr></thead><tbody>
+    ${(data.artifacts || []).map((item) => `<tr onclick="openArtifact('${esc(item.name)}')">
+      <td class="mono">${esc(item.name)}</td><td>${esc(item.stage)}</td>
+      <td><span class="badge ${esc(item.status)}">${esc(item.status)}</span></td>
+      <td>v${esc(item.version)}</td><td class="mono muted">${esc(item.hash || '-')}</td>
+      <td class="muted">${esc(item.summary || '')}</td></tr>`).join('')}
+    </tbody></table>` : '<div class="empty">尚无产物。</div>';
+}
+function agentDetail(event) {
+  const parts = [];
+  if (event.steps != null) parts.push('steps=' + event.steps);
+  if (Array.isArray(event.files)) parts.push('files=' + event.files.join(','));
+  if (event.cases != null) parts.push('cases=' + event.cases);
+  if (event.passed != null) parts.push('passed=' + event.passed + '/' + (event.total != null ? event.total : '?'));
+  if (Array.isArray(event.failure_items) && event.failure_items.length) parts.push('fail=' + event.failure_items.join(','));
+  if (event.tokens) parts.push('tokens=' + event.tokens);
+  if (event.elapsed_ms != null) parts.push(event.elapsed_ms + 'ms');
+  return parts.join(' · ');
+}
+function renderAgents() {
+  const payload = state.agents; if (!payload) return;
+  const summary = payload.summary || {};
+  const roles = summary.roles || {};
+  el('agent-summary').innerHTML = `
+    <div class="panel"><div class="metric"><div class="k">轮次</div><div class="v">${esc(summary.rounds || 0)}</div></div></div>
+    <div class="panel"><div class="metric"><div class="k">事件</div><div class="v">${esc(summary.count || 0)}</div></div></div>
+    <div class="panel"><div class="metric"><div class="k">Verdict</div><div class="v">${esc(summary.verdict || '未运行')}</div></div></div>
+    <div class="panel"><div class="metric"><div class="k">角色</div><div class="v" style="font-size:12px">${Object.entries(roles).map(([k, v]) => esc(k) + '=' + v).join(' · ') || '—'}</div></div></div>`;
+  const events = payload.events || [];
+  el('agent-events').innerHTML = events.length
+    ? `<table><thead><tr><th>轮次</th><th>角色</th><th>事件</th><th>详情</th></tr></thead><tbody>${events.map((event) => `<tr><td>${esc(event.round || '')}</td><td><span class="badge">${esc(event.role || '')}</span></td><td>${esc(event.event || '')}</td><td class="mono muted">${esc(agentDetail(event))}</td></tr>`).join('')}</tbody></table>`
+    : '<div class="empty">还没有 TDD 事件。到「运行」执行 /add --task T1 后，这里会显示 Planner → Test Writer → Executor → Verifier 的逐轮事件。</div>';
+}
+function renderTraces() {
+  const data = state.data; if (!data) return;
+  const traces = data.traces || [];
+  el('trace-list').innerHTML = traces.length ? traces.map((item) => `
+    <button class="trace-item" onclick="openTrace('${esc(item.name)}')">
+      <b>${esc(item.name)}</b><span>${(item.size / 1024).toFixed(1)} KB · ${new Date(item.mtime * 1000).toLocaleString()}</span>
+    </button>`).join('') : '<div class="empty">暂无 Trace。</div>';
+}
+function renderQuickCommands() {
+  const data = state.data; if (!data) return;
+  el('quick-commands').innerHTML = (data.commands || []).map((item) => `
+    <button class="trace-item" onclick="setCommand('${esc(item.command)}')">
+      <b>${esc(item.command)}</b><span>${esc(item.stage)} · ${esc(item.title)}${item.gate ? ' · 门控 ' + esc(item.gate) : ''}</span>
+    </button>`).join('');
+}
+function setCommand(value) {
+  el('run-cmd').value = value;
+  el('next-cmd').value = value;
+  setTab('run');
+}
+function setTab(name) {
+  state.tab = name;
+  document.querySelectorAll('.tab').forEach((node) => node.classList.toggle('active', node.dataset.tab === name));
+  ['overview', 'artifacts', 'traces', 'agents', 'run'].forEach((tab) => { el('tab-' + tab).hidden = tab !== name; });
+  if (name === 'agents') renderAgents();
+}
+function pickStage(command) {
+  el('next-cmd').value = command;
+  el('run-cmd').value = command;
+  setTab('overview');
+}
+
+/* -------------------------------- 数据 -------------------------------- */
+async function refresh(quiet) {
+  try {
+    state.data = await api('/api/state');
+    state.agents = await api('/api/agents');
+    el('chip-project').title = state.data.project;
+    el('chip-project').innerHTML = '项目：<b>' + esc((state.data.project || '').split(/[\\/]/).filter(Boolean).slice(-2).join('/')) + '</b>';
+    el('chip-mode').innerHTML = '模式 <b>' + esc(state.data.mode) + '</b>';
+    el('chip-mode').className = 'chip ' + (state.data.mode === 'mock' ? 'warn' : 'ok');
+    el('chip-version').textContent = 'v' + state.data.specflow_version;
+    el('term-cwd').textContent = (state.data.project || '').split(/[\\/]/).filter(Boolean).slice(-2).join('/');
+    if (!state.termWelcome) {
+      termPrint('specflow v' + state.data.specflow_version + ' · ' + state.data.project, 'muted');
+      termPrint('模式 ' + state.data.mode + ' · 输入 --help 查看子命令（status / doctor / run / gate / restore / unlock）', 'muted');
+      state.termWelcome = true;
+    }
+    renderStages(); renderHero(); renderOverview(); renderArtifacts(); renderTraces(); renderAgents(); renderQuickCommands();
+    if (!quiet) toast('已刷新', 'ok');
+  } catch (err) {
+    toast('读取失败：' + err.message, 'err');
+  }
+}
+async function runCheck() {
+  try {
+    state.data = await api('/api/check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    renderStages(); renderHero(); renderOverview(); renderArtifacts();
+    toast((state.data.problems || []).length ? '校验发现 ' + state.data.problems.length + ' 个问题' : '校验通过', (state.data.problems || []).length ? 'err' : 'ok');
+  } catch (err) { toast('校验失败：' + err.message, 'err'); }
+}
+async function doInit() {
+  try {
+    const result = await api('/api/init', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    toast(result.ok ? '初始化完成' : '初始化有告警，请看输出', result.ok ? 'ok' : 'err');
+    await refresh(true);
+  } catch (err) { toast('初始化失败：' + err.message, 'err'); }
+}
+async function gateAction(name, action) {
+  let note = '';
+  if (action !== 'approve') {
+    note = window.prompt('填写' + (action === 'reject' ? '打回意见' : '修订说明') + '（可留空）') || '';
+  }
+  try {
+    const result = await api('/api/gate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, action, note }) });
+    toast(result.summary || '已处理', 'ok');
+    await refresh(true);
+  } catch (err) { toast('门控失败：' + err.message, 'err'); }
+}
+
+/* -------------------------------- 产物 -------------------------------- */
+async function openArtifact(name) {
+  el('modal').hidden = false;
+  el('modal-title').textContent = name;
+  el('modal-body').innerHTML = '<div class="empty">加载中…</div>';
+  try {
+    const data = await api('/api/artifact?name=' + encodeURIComponent(name));
+    const meta = data.meta || {};
+    const chips = ['stage', 'status', 'version', 'owner'].filter((key) => meta[key] != null)
+      .map((key) => `<span class="chip">${esc(key)} <b>${esc(meta[key])}</b></span>`).join(' ');
+    el('modal-body').innerHTML = `<div style="margin-bottom:12px">${chips} <span class="chip">hash <b>${esc(data.hash)}</b></span></div><div class="md">${renderMarkdown(data.body || '')}</div>`;
+  } catch (err) {
+    el('modal-body').innerHTML = `<div class="problems">${esc(err.message)}</div>`;
+  }
+}
+function closeModal() { el('modal').hidden = true; }
+
+/* -------------------------------- Trace -------------------------------- */
+async function openTrace(name) {
+  try {
+    const data = await api('/api/trace?name=' + encodeURIComponent(name));
+    el('trace-view').className = '';
+    el('trace-view').innerHTML = `<div class="kicker" style="margin-bottom:8px">${esc(name)} · ${data.events.length} 条事件</div>
+      <pre class="json">${esc(data.events.map((item) => JSON.stringify(item)).join('\n'))}</pre>`;
+  } catch (err) { toast('读取 Trace 失败：' + err.message, 'err'); }
+}
+
+/* -------------------------------- 运行 -------------------------------- */
+function classify(line) {
+  if (/\[FAIL\]|Traceback|Error|error:|错误|x /i.test(line)) return 'err';
+  if (/\[PASS\]|成功|完成|approved|OK/i.test(line)) return 'ok';
+  return '';
+}
+function appendLog(text, kind) {
+  const node = el('console');
+  if (node.textContent.trim() === '等待执行…') node.textContent = '';
+  const span = document.createElement('span');
+  span.className = 'log-line ' + (kind || classify(text));
+  span.textContent = text + '\n';
+  node.appendChild(span);
+  node.scrollTop = node.scrollHeight;
+}
+function clearConsole() { el('console').textContent = '等待执行…'; }
+
+async function runCommand(command) {
+  command = (command || '').trim();
+  if (!command) { toast('请输入阶段命令', 'err'); return; }
+  if (state.running) { toast('已有命令在运行', 'err'); return; }
+  state.running = true;
+  setTab('run');
+  el('run-btn').disabled = true; el('next-run').disabled = true;
+  appendLog('$ specflow run "' + command + '"', 'meta');
+  try {
+    const res = await fetch('/api/run/stream?cmd=' + encodeURIComponent(command));
+    if (!res.body) throw new Error('当前浏览器不支持流式响应');
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let finished = false;
+    while (!finished) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+      let index;
+      while ((index = buffer.indexOf('\n\n')) >= 0) {
+        const raw = buffer.slice(0, index).trim();
+        buffer = buffer.slice(index + 2);
+        if (!raw.startsWith('data:')) continue;
+        let event = {};
+        try { event = JSON.parse(raw.slice(5).trim()); } catch (err) { continue; }
+        if (event.type === 'log') appendLog(event.line || '');
+        else if (event.type === 'start') appendLog('cwd=' + event.cwd, 'meta');
+        else if (event.type === 'error') { appendLog('ERROR: ' + event.message, 'err'); toast(event.message, 'err'); }
+        else if (event.type === 'done') {
+          finished = true;
+          appendLog('—— 结束（exit ' + event.code + '）——', event.code === 0 ? 'ok' : 'err');
+          toast(event.code === 0 ? '命令执行完成' : '命令执行失败（exit ' + event.code + '）', event.code === 0 ? 'ok' : 'err');
+        }
+      }
+    }
+  } catch (err) {
+    appendLog('ERROR: ' + err.message, 'err');
+    toast('运行失败：' + err.message, 'err');
+  } finally {
+    state.running = false;
+    el('run-btn').disabled = false; el('next-run').disabled = false;
+    await refresh(true);
+  }
+}
+
+/* -------------------------------- 自检 -------------------------------- */
+async function openDoctor() {
+  el('modal').hidden = false;
+  el('modal-title').textContent = '环境自检（doctor）';
+  el('modal-body').innerHTML = '<div class="empty">运行中…</div>';
+  try {
+    const data = await api('/api/doctor');
+    el('modal-body').innerHTML = (data.checks || []).map((item) => `
+      <div class="gate-row" style="margin-bottom:6px">
+        <span class="badge ${item.status === 'PASS' ? 'approved' : (item.status === 'WARN' ? 'pending' : 'rejected')}">${esc(item.status)}</span>
+        <span class="gname">${esc(item.name)}</span>
+        <span class="muted" style="font-size:12px">${esc(item.detail)}</span>
+      </div>`).join('') + `<div class="okline" style="margin-top:10px">${data.ok ? '环境自检通过' : '存在 FAIL 项，请按提示修复'}</div>`;
+  } catch (err) {
+    el('modal-body').innerHTML = `<div class="problems">${esc(err.message)}</div>`;
+  }
+}
+
+/* -------------------------------- 终端模式 -------------------------------- */
+function termPrint(text, cls) {
+  const node = el('term-out');
+  const line = document.createElement('div');
+  line.className = 'term-line ' + (cls || '');
+  line.textContent = text;
+  node.appendChild(line);
+  node.scrollTop = node.scrollHeight;
+}
+function clearTerminal() {
+  el('term-out').innerHTML = '';
+  state.termWelcome = false;
+  termPrint('specflow 终端 · 输入 --help 查看可用子命令', 'muted');
+  state.termWelcome = true;
+}
+function termFill(command) {
+  el('term-cmd').value = command;
+  el('term-cmd').focus();
+}
+async function streamEvents(url, onEvent) {
+  const res = await fetch(url);
+  if (!res.body) throw new Error('当前浏览器不支持流式响应');
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (true) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    buffer += decoder.decode(chunk.value, { stream: true });
+    let index;
+    while ((index = buffer.indexOf('\n\n')) >= 0) {
+      const raw = buffer.slice(0, index).trim();
+      buffer = buffer.slice(index + 2);
+      if (!raw.startsWith('data:')) continue;
+      try { onEvent(JSON.parse(raw.slice(5).trim())); } catch (err) { /* 忽略半包 */ }
+    }
+  }
+}
+async function termRun() {
+  const command = el('term-cmd').value.trim();
+  if (!command) return;
+  state.termHistory.push(command);
+  state.termIndex = state.termHistory.length;
+  el('term-cmd').value = '';
+  termPrint('specflow> ' + command, 'cmd');
+  el('term-run').disabled = true;
+  try {
+    await streamEvents('/api/cli/stream?cmd=' + encodeURIComponent(command), (event) => {
+      if (event.type === 'log') termPrint(event.line || '', classify(event.line || ''));
+      else if (event.type === 'start') termPrint('cwd=' + event.cwd, 'muted');
+      else if (event.type === 'error') termPrint('ERROR: ' + event.message, 'err');
+      else if (event.type === 'done') termPrint('—— exit ' + event.code + ' ——', event.code === 0 ? 'ok' : 'err');
+    });
+    await refresh(true);
+  } catch (err) {
+    termPrint('ERROR: ' + err.message, 'err');
+    toast('终端命令失败：' + err.message, 'err');
+  } finally {
+    el('term-run').disabled = false;
+    el('term-cmd').focus();
+  }
+}
+function termKey(event) {
+  if (event.key === 'Enter') {
+    event.preventDefault();
+    termRun();
+    return;
+  }
+  if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+    event.preventDefault();
+    if (!state.termHistory.length) return;
+    if (event.key === 'ArrowUp') state.termIndex = Math.max(0, state.termIndex - 1);
+    else state.termIndex = Math.min(state.termHistory.length, state.termIndex + 1);
+    el('term-cmd').value = state.termHistory[state.termIndex] || '';
+  }
+}
+
+/* -------------------------------- Markdown -------------------------------- */
+function renderInline(text) {
+  return esc(text)
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+}
+function renderMarkdown(text) {
+  const lines = String(text || '').replace(/\r\n/g, '\n').split('\n');
+  const out = [];
+  let index = 0;
+  let listType = null;
+  const closeList = () => { if (listType) { out.push('</' + listType + '>'); listType = null; } };
+  while (index < lines.length) {
+    const line = lines[index];
+    if (line.startsWith('```')) {
+      closeList();
+      const lang = line.slice(3).trim();
+      index += 1;
+      const code = [];
+      while (index < lines.length && !lines[index].startsWith('```')) { code.push(lines[index]); index += 1; }
+      index += 1;
+      out.push(`<pre${lang ? ` class="language-${esc(lang)}"` : ''}><code>${esc(code.join('\n'))}</code></pre>`);
+      continue;
+    }
+    if (/^\s*$/.test(line)) { closeList(); index += 1; continue; }
+    const heading = line.match(/^(#{1,4})\s+(.*)$/);
+    if (heading) {
+      closeList();
+      const level = Math.min(heading[1].length, 4);
+      out.push(`<h${level}>${renderInline(heading[2])}</h${level}>`);
+      index += 1;
+      continue;
+    }
+    if (/^\s*[-*]\s+/.test(line)) {
+      if (listType !== 'ul') { closeList(); out.push('<ul>'); listType = 'ul'; }
+      out.push('<li>' + renderInline(line.replace(/^\s*[-*]\s+/, '')) + '</li>');
+      index += 1;
+      continue;
+    }
+    if (/^\s*\d+\.\s+/.test(line)) {
+      if (listType !== 'ol') { closeList(); out.push('<ol>'); listType = 'ol'; }
+      out.push('<li>' + renderInline(line.replace(/^\s*\d+\.\s+/, '')) + '</li>');
+      index += 1;
+      continue;
+    }
+    if (/^\s*>\s?/.test(line)) {
+      closeList();
+      out.push('<blockquote>' + renderInline(line.replace(/^\s*>\s?/, '')) + '</blockquote>');
+      index += 1;
+      continue;
+    }
+    if (line.trim().startsWith('|')) {
+      closeList();
+      const rows = [];
+      while (index < lines.length && lines[index].trim().startsWith('|')) { rows.push(lines[index]); index += 1; }
+      const cells = rows.map((row) => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((cell) => cell.trim()));
+      const header = cells[0] || [];
+      const body = cells.slice(cells[1] && /^[-: ]+$/.test(cells[1].join('')) ? 2 : 1);
+      out.push('<table><thead><tr>' + header.map((cell) => '<th>' + renderInline(cell) + '</th>').join('') + '</tr></thead><tbody>'
+        + body.map((row) => '<tr>' + row.map((cell) => '<td>' + renderInline(cell) + '</td>').join('') + '</tr>').join('')
+        + '</tbody></table>');
+      continue;
+    }
+    closeList();
+    const paragraph = [line];
+    index += 1;
+    while (index < lines.length && !/^\s*$/.test(lines[index]) && !/^(#{1,4}\s|```|\s*[-*]\s|\s*\d+\.\s|\s*>|\s*\|)/.test(lines[index])) {
+      paragraph.push(lines[index]); index += 1;
+    }
+    out.push('<p>' + renderInline(paragraph.join(' ')) + '</p>');
+  }
+  closeList();
+  return out.join('\n');
+}
+
+/* -------------------------------- 启动 -------------------------------- */
+document.addEventListener('keydown', (event) => { if (event.key === 'Escape') closeModal(); });
+el('term-cmd').addEventListener('keydown', termKey);
+setMode(state.mode);
+refresh(true).then(() => {
+  state.autoTimer = setInterval(() => { if (!state.running) refresh(true).catch(() => {}); }, 15000);
+});
+</script>
+</body>
+</html>

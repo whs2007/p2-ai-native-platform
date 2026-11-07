@@ -1,0 +1,9 @@
+# demo-repo 的 lint 基线：与 pyproject.toml 一起作为 /project-init 的规范文件素材。
+line-length = 100
+target-version = "py311"
+
+[lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[lint.isort]
+known-first-party = ["visit_plan"]

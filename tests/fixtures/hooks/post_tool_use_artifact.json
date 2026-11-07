@@ -1,0 +1,16 @@
+{
+  "session_id": "ses_01J8Z2K6QF",
+  "hook_event_name": "PostToolUse",
+  "cwd": "C:/work/demo-repo",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "C:/work/demo-repo/.spec/artifacts/design.md",
+    "old_string": "## 4 风险与回滚",
+    "new_string": "## 4 风险与回滚\n- RISK-04 导入超时需重试"
+  },
+  "tool_response": {
+    "success": true,
+    "bytes": 512
+  },
+  "tool_use_id": "toolu_01VB9QXB"
+}

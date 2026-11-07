@@ -1,0 +1,25 @@
+{
+  "default_user": "lin.xu",
+  "users": {
+    "lin.xu": {
+      "user_id": "U-1001",
+      "name": "lin.xu",
+      "display_name": "林叙",
+      "email": "lin.xu@example.com",
+      "roles": ["engineer"],
+      "teams": ["retail-tools"],
+      "authenticated": true,
+      "source": "sso"
+    },
+    "chen.yu": {
+      "user_id": "U-1002",
+      "name": "chen.yu",
+      "display_name": "陈屿",
+      "email": "chen.yu@example.com",
+      "roles": ["reviewer"],
+      "teams": ["retail-tools"],
+      "authenticated": true,
+      "source": "sso"
+    }
+  }
+}

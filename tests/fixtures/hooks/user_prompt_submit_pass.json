@@ -1,0 +1,6 @@
+{
+  "session_id": "ses_01J8Z2K6QF",
+  "hook_event_name": "UserPromptSubmit",
+  "cwd": "C:/work/demo-repo",
+  "prompt": "/explore --scope src/visit_plan"
+}

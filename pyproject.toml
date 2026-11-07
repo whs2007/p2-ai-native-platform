@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "specflow"
+version = "1.0.0"
+description = "Spec-driven agentic software engineering pipeline: 9 stage commands, 4 hooks, multi-role TDD"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "storymaker" }]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+specflow = "specflow.cli:entrypoint"
+
+[tool.setuptools.packages.find]
+include = ["specflow*"]
+
+[tool.setuptools.package-data]
+specflow = ["templates/*", "platforms/mock_data/*.json", "skills/*/SKILL.md", "hooks.json", "web_static/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q -p no:cacheprovider"
+filterwarnings = ["ignore::DeprecationWarning"]
